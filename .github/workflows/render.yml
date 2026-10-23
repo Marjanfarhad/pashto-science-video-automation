@@ -1,0 +1,38 @@
+name: Create Pashto science video
+on:
+  workflow_dispatch:
+    inputs:
+      job:
+        description: Approved job identifier
+        required: true
+        default: pilot-001
+permissions:
+  contents: read
+concurrency:
+  group: pashto-video-render
+  cancel-in-progress: false
+jobs:
+  render:
+    if: github.event.repository.private == false
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install rendering tools
+        run: python -m pip install -r requirements.txt
+      - name: Render approved video
+        env:
+          JOB_ID: ${{ inputs.job }}
+        run: python run_job.py
+      - name: Save video for review
+        uses: actions/upload-artifact@v4
+        with:
+          name: pashto-video-${{ github.run_id }}
+          path: |
+            video-pilot-output/pashto-science-pilot.mp4
+            video-pilot-output/run-result.json
+          if-no-files-found: error
+          retention-days: 1
